@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Diet Assistant PRO - Marco Massa & Gemini</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        :root { --primary: #ffcc00; --dark: #333; --bg: #fdfaf7; --success: #27ae60; --danger: #e74c3c; --info: #3498db; }
+        
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body { 
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            background-color: #f0f2f5;
+            background-image: url("https://www.transparenttextures.com/patterns/food.png");
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100vh; margin: 0; padding: 15px;
+        }
+
+        .card { 
+            background: white; padding: 20px; border-radius: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+            width: 100%; max-width: 480px; border: 4px solid var(--primary);
+        }
+
+        h2 { text-align: center; color: var(--dark); margin: 10px 0 20px 0; font-size: 1.5rem; }
+        
+        .toggle-container { display: flex; background: #f1f1f1; border-radius: 15px; margin-bottom: 15px; padding: 4px; }
+        .toggle-btn { flex: 1; border: none; padding: 12px; cursor: pointer; border-radius: 12px; font-weight: bold; transition: 0.3s; font-size: 0.9rem; }
+        .active { background: var(--primary); color: var(--dark); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        .cat-label { font-size: 0.75rem; font-weight: 800; margin-top: 12px; color: #666; display: block; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* Input e Select ottimizzati per Mobile (evitano lo zoom su iOS) */
+        select, input { 
+            width: 100%; padding: 12px; margin-top: 5px; border: 2px solid #eee; 
+            border-radius: 12px; font-size: 16px; outline: none; background: #fafafa;
+            appearance: none; -webkit-appearance: none;
+        }
+        select:focus, input:focus { border-color: var(--primary); background: white; }
+
+        .result-box { margin-top: 20px; padding: 15px; background: #fffdf2; border-radius: 15px; text-align: center; border: 2px solid var(--primary); }
+        #valore { font-size: 2.2rem; font-weight: bold; color: var(--dark); margin: 5px 0; }
+        
+        .macro-display { display: flex; justify-content: space-around; margin-top: 10px; font-size: 0.8rem; color: #666; }
+        .macro-val { display: block; font-weight: bold; color: var(--dark); font-size: 1rem; }
+
+        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        
+        button { font-size: 1rem; font-weight: bold; border-radius: 12px; border: none; cursor: pointer; transition: transform 0.1s; touch-action: manipulation; }
+        button:active { transform: scale(0.97); }
+
+        .btn-add { grid-column: span 2; padding: 15px; background: var(--success); color: white; }
+        .btn-reset { padding: 12px; background: #e0e0e0; color: #666; }
+        .btn-plate-view { padding: 12px; background: var(--dark); color: white; }
+
+        /* Modal / Popup */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; padding: 10px; }
+        .modal-content { background: white; padding: 20px; border-radius: 20px; width: 100%; max-width: 420px; max-height: 85vh; overflow-y: auto; position: relative; }
+        .plate-item { border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+
+        .footer { margin-top: 20px; font-size: 0.8rem; color: #777; text-align: center; padding-bottom: 20px; }
+        .pdf-header { display: none; text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 10px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>⚖️ Diet Assistant</h2>
+
+    <div class="toggle-container">
+        <button id="btnDir" class="toggle-btn active" onclick="setMode('dir')">Crudo → Cotto</button>
+        <button id="btnInv" class="toggle-btn" onclick="setMode('inv')">Cotto → Crudo</button>
+    </div>
+
+    <span class="cat-label">🍜 Primi e Cereali</span>
+    <select id="primi" onchange="selezioneAlimento('primi')"><option value="">-- Seleziona --</option></select>
+
+    <span class="cat-label">🥩 Secondi</span>
+    <select id="secondi" onchange="selezioneAlimento('secondi')"><option value="">-- Seleziona --</option></select>
+
+    <span class="cat-label">🥗 Contorni</span>
+    <select id="contorni" onchange="selezioneAlimento('contorni')"><option value="">-- Seleziona --</option></select>
+
+    <div id="cottura-box" style="display:none;">
+        <span class="cat-label">Metodo di Cottura</span>
+        <select id="cottura" onchange="eseguiCalcolo()">
+            <option value="bollito">Bollito / Vapore</option>
+            <option value="padella">In Padella / Grill</option>
+            <option value="forno">Al Forno / Air Fryer</option>
+        </select>
+    </div>
+
+    <span class="cat-label" id="lInput">Peso Crudo (g)</span>
+    <input type="number" id="inputG" placeholder="Inserisci grammi" inputmode="decimal" oninput="eseguiCalcolo()">
+
+    <div class="result-box">
+        <span id="lRes" style="font-size: 0.75rem; color: #888; font-weight: bold;">PESO STIMATO COTTO</span>
+        <div id="valore">0 g</div>
+        <div class="macro-display">
+            <div class="macro-item">Kcal<span class="macro-val" id="mKcal">0</span></div>
+            <div class="macro-item">Carb<span class="macro-val" id="mCarb">0g</span></div>
+            <div class="macro-item">Prot<span class="macro-val" id="mProt">0g</span></div>
+            <div class="macro-item">Fat<span class="macro-val" id="mFat">0g</span></div>
+        </div>
+    </div>
+
+    <div class="button-group">
+        <button class="btn-add" onclick="aggiungiAlPiatto()">➕ Aggiungi al Piatto</button>
+        <button class="btn-reset" onclick="azzeraScelta()">🧹 Azzera</button>
+        <button class="btn-plate-view" onclick="toggleModal(true)">🍽️ Piatto (<span id="count">0</span>)</button>
+    </div>
+</div>
+
+<div id="plateModal" class="modal">
+    <div class="modal-content" id="pdf-area">
+        <div class="pdf-header" id="pdf-h">
+            <h1>Diet Assistant</h1>
+            <p>Riepilogo Pasto - Marco Massa & Gemini</p>
+        </div>
+        <h3 style="margin: 0 0 15px 0;">🍽️ Riepilogo Pasto</h3>
+        <div id="plateList"></div>
+        <div class="result-box" style="background: #e8f5e9; border-color: #27ae60;">
+            <small>TOTALE MACRO</small>
+            <div class="macro-display">
+                <div class="macro-item">Kcal<span class="macro-val" id="tKcal">0</span></div>
+                <div class="macro-item">C<span class="macro-val" id="tCarb">0g</span></div>
+                <div class="macro-item">P<span class="macro-val" id="tProt">0g</span></div>
+                <div class="macro-item">F<span class="macro-val" id="tFat">0g</span></div>
+            </div>
+        </div>
+        <button class="btn-plate-view" style="background: var(--info); width: 100%; margin-top: 15px; padding: 12px;" onclick="downloadPDF()">📄 Scarica PDF</button>
+        <button class="btn-reset" style="background: var(--danger); color: white; width: 100%; margin-top: 10px; padding: 12px;" onclick="svuotaPiatto()">🗑️ Svuota Tutto</button>
+        <button class="btn-plate-view" style="width: 100%; margin-top: 10px; padding: 12px;" onclick="toggleModal(false)">Esci</button>
+    </div>
+</div>
+
+<div class="footer">Ideato e progettato da <b>Marco Massa</b> & <b>Gemini</b></div>
+
+<script>
+    let mode = 'dir';
+    let piatto = [];
+    let alimentoAttivo = null;
+
+    const db = {
+        primi: {
+            'Pasta Grano Duro': { c: {bollito:2}, m: [353, 71, 13, 1.5] },
+            'Riso Basmati': { c: {bollito:3}, m: [350, 78, 8, 0.5] },
+            'Pasta Integrale': { c: {bollito:2.2}, m: [330, 65, 14, 2.5] },
+            'Gnocchi di Patate': { c: {bollito:1.1}, m: [160, 35, 3, 0.5] },
+            'Farro': { c: {bollito:2.5}, m: [340, 67, 15, 2] },
+            'Orzo Perlato': { c: {bollito:2.8}, m: [350, 73, 10, 1] },
+            'Quinoa': { c: {bollito:3}, m: [368, 64, 14, 6] },
+            'Cous Cous': { c: {bollito:2.5}, m: [356, 72, 12, 1] },
+            'Pasta all Uovo': { c: {bollito:1.6}, m: [370, 68, 14, 3] },
+            'Riso Venere': { c: {bollito:2.8}, m: [345, 70, 9, 2] },
+            'Polenta (Farina)': { c: {bollito:4}, m: [350, 77, 8, 1] },
+            'Lenticchie Secche': { c: {bollito:2.5}, m: [310, 50, 24, 1] },
+            'Fagioli Secchi': { c: {bollito:2.6}, m: [300, 48, 22, 1.5] },
+            'Grano Saraceno': { c: {bollito:2.5}, m: [340, 70, 13, 3] },
+            'Pasta di Legumi': { c: {bollito:1.9}, m: [330, 45, 25, 2] }
+        },
+        secondi: {
+            'Petto di Pollo': { c: {bollito:0.8, padella:0.72, forno:0.65}, m: [114, 0, 23, 2.5] },
+            'Fesa di Tacchino': { c: {bollito:0.8, padella:0.75, forno:0.68}, m: [105, 0, 24, 1] },
+            'Filetto di Manzo': { c: {bollito:0.75, padella:0.68, forno:0.6}, m: [140, 0, 21, 6] },
+            'Hamburger Manzo': { c: {bollito:0.75, padella:0.65, forno:0.58}, m: [200, 0, 20, 13] },
+            'Arista di Maiale': { c: {bollito:0.78, padella:0.7, forno:0.62}, m: [120, 0, 22, 3] },
+            'Merluzzo': { c: {bollito:0.85, padella:0.78, forno:0.7}, m: [80, 0, 18, 0.7] },
+            'Salmone Fresco': { c: {bollito:0.9, padella:0.82, forno:0.75}, m: [200, 0, 20, 13] },
+            'Orata / Branzino': { c: {bollito:0.88, padella:0.8, forno:0.72}, m: [110, 0, 20, 3] },
+            'Tonno Fresco': { c: {bollito:0.85, padella:0.8, forno:0.75}, m: [130, 0, 23, 4] },
+            'Gamberi': { c: {bollito:0.82, padella:0.75, forno:0.68}, m: [85, 1, 18, 0.5] },
+            'Uova (2 medie)': { c: {bollito:0.95, padella:0.9, forno:0.9}, m: [150, 1, 13, 10] },
+            'Seppie / Calamari': { c: {bollito:0.7, padella:0.6, forno:0.55}, m: [70, 1, 15, 1] },
+            'Sogliola': { c: {bollito:0.85, padella:0.8, forno:0.75}, m: [85, 0, 19, 1] },
+            'Bresaola': { c: {bollito:1, padella:1, forno:1}, m: [150, 0, 32, 2] },
+            'Tofu': { c: {bollito:1, padella:0.85, forno:0.75}, m: [80, 2, 8, 4.5] }
+        },
+        contorni: {
+            'Zucchine': { c: {bollito:0.92, padella:0.65, forno:0.5}, m: [17, 3, 1, 0.2] },
+            'Melanzane': { c: {bollito:0.9, padella:0.7, forno:0.45}, m: [25, 6, 1, 0.2] },
+            'Peperoni': { c: {bollito:0.95, padella:0.85, forno:0.65}, m: [30, 6, 1, 0.3] },
+            'Patate': { c: {bollito:1.05, padella:0.85, forno:0.72}, m: [77, 17, 2, 0.1] },
+            'Spinaci': { c: {bollito:0.85, padella:0.45, forno:0.4}, m: [23, 3, 3, 0.4] },
+            'Broccoli': { c: {bollito:0.9, padella:0.8, forno:0.7}, m: [34, 7, 3, 0.4] },
+            'Funghi Freschi': { c: {bollito:0.8, padella:0.5, forno:0.4}, m: [22, 3, 3, 0.3] },
+            'Zucca': { c: {bollito:0.9, padella:0.75, forno:0.55}, m: [26, 6, 1, 0.1] },
+            'Fagiolini': { c: {bollito:1, padella:0.9, forno:0.8}, m: [31, 7, 2, 0.2] },
+            'Asparagi': { c: {bollito:0.95, padella:0.85, forno:0.75}, m: [20, 4, 2, 0.1] },
+            'Carote': { c: {bollito:0.95, padella:0.8, forno:0.7}, m: [41, 10, 1, 0.2] },
+            'Cavolfiore': { c: {bollito:0.9, padella:0.8, forno:0.7}, m: [25, 5, 2, 0.3] },
+            'Finocchi': { c: {bollito:0.9, padella:0.7, forno:0.6}, m: [31, 7, 1, 0.2] },
+            'Piselli (Surgelati)': { c: {bollito:1, padella:1, forno:1}, m: [80, 14, 5, 0.5] },
+            'Pomodori': { c: {bollito:0.9, padella:0.7, forno:0.5}, m: [18, 4, 1, 0.2] }
+        }
+    };
+
+    function popolaListe() {
+        ['primi','secondi','contorni'].forEach(cat => {
+            const select = document.getElementById(cat);
+            for (let alim in db[cat]) {
+                let opt = document.createElement('option');
+                opt.value = alim; opt.textContent = alim;
+                select.appendChild(opt);
+            }
+        });
+    }
+
+    function selezioneAlimento(cat) {
+        ['primi', 'secondi', 'contorni'].forEach(c => { if(c !== cat) document.getElementById(c).value = ""; });
+        const id = document.getElementById(cat).value;
+        if (!id) { azzeraScelta(); return; }
+        alimentoAttivo = { id, cat };
+        document.getElementById('cottura-box').style.display = (cat === 'primi') ? 'none' : 'block';
+        eseguiCalcolo();
+    }
+
+    function setMode(m) {
+        mode = m;
+        document.getElementById('btnDir').className = m === 'dir' ? 'toggle-btn active' : 'toggle-btn';
+        document.getElementById('btnInv').className = m === 'inv' ? 'toggle-btn active' : 'toggle-btn';
+        document.getElementById('lInput').innerText = m === 'dir' ? "Peso Crudo (g)" : "Peso Cotto (g)";
+        document.getElementById('lRes').innerText = m === 'dir' ? "PESO STIMATO COTTO" : "PESO EQUIVALENTE CRUDO";
+        eseguiCalcolo();
+    }
+
+    function azzeraScelta() {
+        ['primi', 'secondi', 'contorni'].forEach(id => document.getElementById(id).value = "");
+        document.getElementById('inputG').value = "";
+        document.getElementById('valore').innerText = "0 g";
+        document.getElementById('mKcal').innerText = "0";
+        document.getElementById('mCarb').innerText = "0g";
+        document.getElementById('mProt').innerText = "0g";
+        document.getElementById('mFat').innerText = "0g";
+        document.getElementById('cottura-box').style.display = "none";
+        alimentoAttivo = null;
+    }
+
+    function eseguiCalcolo() {
+        if (!alimentoAttivo) return;
+        const data = db[alimentoAttivo.cat][alimentoAttivo.id];
+        const cott = document.getElementById('cottura').value;
+        const peso = parseFloat(document.getElementById('inputG').value) || 0;
+        const coeff = data.c[cott] || data.c['bollito'];
+        
+        const resPeso = mode === 'dir' ? peso * coeff : peso / coeff;
+        const pesoCrudo = mode === 'dir' ? peso : resPeso;
+
+        document.getElementById('valore').innerText = Math.round(resPeso) + " g";
+        const r = pesoCrudo / 100;
+        document.getElementById('mKcal').innerText = Math.round(data.m[0] * r);
+        document.getElementById('mCarb').innerText = (data.m[1] * r).toFixed(1) + "g";
+        document.getElementById('mProt').innerText = (data.m[2] * r).toFixed(1) + "g";
+        document.getElementById('mFat').innerText = (data.m[3] * r).toFixed(1) + "g";
+    }
+
+    function aggiungiAlPiatto() {
+        if (!alimentoAttivo || !parseFloat(document.getElementById('inputG').value)) return;
+        piatto.push({
+            n: alimentoAttivo.id, p: document.getElementById('valore').innerText,
+            k: parseInt(document.getElementById('mKcal').innerText),
+            c: parseFloat(document.getElementById('mCarb').innerText),
+            pr: parseFloat(document.getElementById('mProt').innerText),
+            f: parseFloat(document.getElementById('mFat').innerText)
+        });
+        document.getElementById('count').innerText = piatto.length;
+        azzeraScelta();
+    }
+
+    function toggleModal(s) { document.getElementById('plateModal').style.display = s ? 'flex' : 'none'; if(s) renderPiatto(); }
+
+    function renderPiatto() {
+        const list = document.getElementById('plateList');
+        list.innerHTML = "";
+        let tk=0, tc=0, tp=0, tf=0;
+        piatto.forEach((i, idx) => {
+            list.innerHTML += `<div class="plate-item"><div><strong>${i.n}</strong><br><small>${i.p} | ${i.k} kcal</small></div><button onclick="rimuoviSingolo(${idx})" style="background:none; color:red; font-size:1.2rem;">✕</button></div>`;
+            tk+=i.k; tc+=i.c; tp+=i.pr; tf+=i.f;
+        });
+        document.getElementById('tKcal').innerText = tk;
+        document.getElementById('tCarb').innerText = tc.toFixed(1) + "g";
+        document.getElementById('tProt').innerText = tp.toFixed(1) + "g";
+        document.getElementById('tFat').innerText = tf.toFixed(1) + "g";
+    }
+
+    function rimuoviSingolo(idx) { piatto.splice(idx, 1); document.getElementById('count').innerText = piatto.length; renderPiatto(); }
+
+    function downloadPDF() {
+        const element = document.getElementById('pdf-area');
+        document.getElementById('pdf-h').style.display = "block";
+        const opt = { margin: 0.5, filename: 'MioPasto.pdf', html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' } };
+        html2pdf().set(opt).from(element).save().then(() => document.getElementById('pdf-h').style.display = "none");
+    }
+
+    function svuotaPiatto() { piatto = []; document.getElementById('count').innerText = 0; toggleModal(false); }
+
+    window.onload = popolaListe;
+</script>
+</body>
+</html>
