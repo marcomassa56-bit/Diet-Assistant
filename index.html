@@ -4,14 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Diet Assistant PRO | Marco Massa</title>
-    <meta name="description" content="Strumento professionale di Marco Massa per il calcolo macro e la conversione crudo-cotto.">
-    <meta name="keywords" content="dieta, marco massa, calcolo macro, convertitore alimenti">
-    <meta name="author" content="Marco Massa">
     
-    <meta property="og:title" content="Diet Assistant PRO - Marco Massa">
-    <meta property="og:description" content="Gestione pasti intelligente e multilingua.">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="https://esempio.com/anteprima.jpg"> <style>
+    <link rel="apple-touch-icon" href="logo.png">
+    <link rel="icon" type="image/png" href="logo.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <style>
         :root { --primary: #D4AF37; --bg: #F5F7FA; --card: #ffffff; --text: #2D3436; --accent: #DFE6ED; --drawer: 280px; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; overflow-x: hidden; }
         
@@ -21,10 +20,15 @@
         
         /* Header e Navigazione */
         .header-bar { display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; background: var(--card); border-bottom: 2px solid var(--primary); position: sticky; top: 0; z-index: 1000; }
+        .logo-area { display: flex; align-items: center; gap: 10px; }
+        .logo-img { width: 32px; height: 32px; border-radius: 6px; background: var(--primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; overflow: hidden; }
+        
+        /* Contatore Visite */
+        .visit-counter { font-size: 0.75rem; background: #eee; padding: 4px 8px; border-radius: 20px; color: #636e72; font-weight: bold; border: 1px solid var(--accent); }
+
         .sidebar { height: 100%; width: 0; position: fixed; z-index: 2000; top: 0; left: 0; background-color: #2D3436; overflow-x: hidden; transition: 0.3s; padding-top: 60px; }
         .sidebar a { padding: 15px 25px; text-decoration: none; font-size: 1.1rem; color: #BDC3C7; display: block; border-bottom: 1px solid #3d4548; }
         
-        /* Layout Sezioni */
         .section { display: none; padding: 20px; max-width: 700px; margin: auto; animation: fadeIn 0.4s ease; }
         .section.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -32,7 +36,6 @@
         .card { background: var(--card); border-radius: 15px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid var(--accent); }
         select, input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid var(--accent); background: #F9FAFB; font-size: 1rem; box-sizing: border-box; outline: none; }
         
-        /* Pulsanti e Risultati */
         .btn { width: 100%; padding: 16px; border-radius: 10px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; font-size: 1rem; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-switch { background: #F1F3F5; color: var(--text); border: 1px solid var(--accent); margin-bottom: 15px; }
@@ -59,13 +62,22 @@
     </div>
 
     <div class="header-bar">
-        <span style="font-size:28px; cursor:pointer; color:var(--primary)" onclick="openNav()">&#9776;</span>
-        <span style="font-weight: 800; letter-spacing: -1px;">DIET ASSISTANT <span style="color:var(--primary)">PRO</span></span>
-        <select id="lang-switch" onchange="changeLanguage()">
-            <option value="it">🇮🇹 IT</option><option value="en">🇺🇸 EN</option>
-            <option value="es">🇪🇸 ES</option><option value="pt">🇵🇹 PT</option>
-            <option value="fr">🇫🇷 FR</option><option value="de">🇩🇪 DE</option>
-        </select>
+        <div class="logo-area">
+            <span style="font-size:24px; cursor:pointer; color:var(--primary)" onclick="openNav()">&#9776;</span>
+            <div class="logo-img">
+                <img src="logo.png" alt="M" style="width:100%; height:100%; object-fit:cover; onerror:this.style.display='none'">
+            </div>
+            <span style="font-weight: 800; letter-spacing: -1px; font-size: 0.9rem;">DIET <span style="color:var(--primary)">PRO</span></span>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:10px;">
+            <div class="visit-counter" id="visit-display">Visite: 1</div>
+            <select id="lang-switch" onchange="changeLanguage()" style="width:auto; margin:0; padding:5px; font-size:0.8rem;">
+                <option value="it">🇮🇹</option><option value="en">🇺🇸</option>
+                <option value="es">🇪🇸</option><option value="pt">🇵🇹</option>
+                <option value="fr">🇫🇷</option><option value="de">🇩🇪</option>
+            </select>
+        </div>
     </div>
 
     <div id="mySidebar" class="sidebar">
@@ -81,6 +93,12 @@
             <button class="btn btn-switch" onclick="switchModo()">🔄 <span id="modo-label"></span></button>
             <label id="lbl-cat1"></label><select id="conv-cat" onchange="filtraAlimenti('conv')"></select>
             <label id="lbl-ali1"></label><select id="conv-alimento" onchange="eseguiConversione()"></select>
+            <label>Metodo di Cottura:</label>
+            <select id="conv-cottura" onchange="eseguiConversione()">
+                <option value="bollito">💧 Bollito / Vapore</option>
+                <option value="padella">🍳 In Padella / Grill</option>
+                <option value="forno">🔥 Al Forno</option>
+            </select>
             <input type="number" id="conv-valore" oninput="eseguiConversione()">
             <div id="conv-res" class="res-box" style="display:none"></div>
         </div>
@@ -119,91 +137,97 @@
             </div>
         </div>
     </div>
-  <script>
+
+    <script>
+        // Gestione Visite (Local)
+        let visits = localStorage.getItem('page_visits') || 0;
+        visits++;
+        localStorage.setItem('page_visits', visits);
+        document.getElementById('visit-display').innerText = "Visite: " + visits;
+
         const uiTrans = {
-            it: { discTitle: "AVVISO IMPORTANTE", discText: "I dati sono puramente illustrativi. Consulta sempre un professionista!", btnClose: "ACCETTO", navConv: "⚖️ Convertitore", navCal: "🔥 Calcolatore", navComp: "🥗 Crea Pasto", cat1: "Primi Piatti", cat2: "Secondi Piatti", cat3: "Contorni", cat4: "Frutta", raw: "CRUDO → COTTO", cooked: "COTTO → CRUDO", lblCat: "Categoria", lblAli: "Alimento", btnCalc: "CALCOLA MACRO", btnAdd: "AGGIUNGI AL PIATTO", btnEmpty: "SVUOTA TUTTO", altTitle: "ALTERNATIVA SUGGERITA:", weight: "Peso stimato", plate: "Il Tuo Piatto:", placeholder: "Grammi (g)" },
-            en: { discTitle: "IMPORTANT NOTICE", discText: "Data for information only. Consult a professional!", btnClose: "I AGREE", navConv: "⚖️ Converter", navCal: "🔥 Calculator", navComp: "🥗 Meal Planner", cat1: "Main Courses", cat2: "Proteins", cat3: "Vegetables", cat4: "Fruits", raw: "RAW → COOKED", cooked: "COOKED → RAW", lblCat: "Category", lblAli: "Food", btnCalc: "CALCULATE", btnAdd: "ADD TO PLATE", btnEmpty: "CLEAR ALL", altTitle: "SUGGESTED OPTION:", weight: "Estimated weight", plate: "Your Plate:", placeholder: "Grams (g)" },
-            es: { discTitle: "AVISO IMPORTANTE", discText: "Datos informativos. ¡Consulte a un profesional!", btnClose: "ACEPTO", navConv: "⚖️ Convertidor", navCal: "🔥 Calculadora", navComp: "🥗 Crear Menú", cat1: "Primeros Platos", cat2: "Proteínas", cat3: "Verduras", cat4: "Frutas", raw: "CRUDO → COCIDO", cooked: "COCIDO → CRUDO", lblCat: "Categoría", lblAli: "Alimento", btnCalc: "CALCULAR", btnAdd: "AÑADIR", btnEmpty: "BORRAR TODO", altTitle: "OPCIÓN ALTERNATIVA:", weight: "Peso estimado", plate: "Tu Plato:", placeholder: "Gramos (g)" },
-            pt: { discTitle: "AVISO", discText: "Dados informativos. Consulte um profissional!", btnClose: "ACEITO", navConv: "⚖️ Conversor", navCal: "🔥 Calculadora", navComp: "🥗 Criar Refeição", cat1: "Primeiros", cat2: "Proteínas", cat3: "Vegetais", cat4: "Frutas", raw: "CRU → COZIDO", cooked: "COZIDO → CRU", lblCat: "Categoria", lblAli: "Alimento", btnCalc: "CALCULAR", btnAdd: "ADICIONAR", btnEmpty: "LIMPAR", altTitle: "OPÇÃO ALTERNATIVA:", weight: "Peso estimado", plate: "Sua Refeição:", placeholder: "Gramas (g)" },
-            fr: { discTitle: "AVIS", discText: "Données informatives. Consultez un professionnel !", btnClose: "OK", navConv: "⚖️ Convertisseur", navCal: "🔥 Calculateur", navComp: "🥗 Créer Repas", cat1: "Plats Principaux", cat2: "Protéines", cat3: "Légumes", cat4: "Fruits", raw: "CRU → CUIT", cooked: "CUIT → CRU", lblCat: "Catégorie", lblAli: "Aliment", btnCalc: "CALCULER", btnAdd: "AJOUTER", btnEmpty: "VIDER", altTitle: "OPTION ALTERNATIVE :", weight: "Poids estimé", plate: "Votre Repas :", placeholder: "Grammes (g)" },
-            de: { discTitle: "HINWEIS", discText: "Nur zur Information. Fachmann konsultieren!", btnClose: "OK", navConv: "⚖️ Konverter", navCal: "🔥 Rechner", navComp: "🥗 Mahlzeitplaner", cat1: "Hauptspeisen", cat2: "Proteine", cat3: "Gemüse", cat4: "Früchte", raw: "ROH → GEKOCHT", cooked: "GEKOCHT → ROH", lblCat: "Kategorie", lblAli: "Lebensmittel", btnCalc: "BERECHNEN", btnAdd: "HINZUFÜGEN", btnEmpty: "LEEREN", altTitle: "ALTERNATIVE:", weight: "Gewicht geschätzt", plate: "Ihre Mahlzeit:", placeholder: "Gramm (g)" }
+            it: { discTitle: "AVVISO IMPORTANTE", discText: "I dati sono puramente illustrativi. Consulta sempre un professionista!", btnClose: "ACCETTO", navConv: "⚖️ Convertitore", navCal: "🔥 Calcolatore", navComp: "🥗 Crea Pasto", cat1: "Primi Piatti", cat2: "Secondi Piatti", cat3: "Contorni", cat4: "Frutta", cat5: "Condimenti", raw: "CRUDO → COTTO", cooked: "COTTO → CRUDO", lblCat: "Categoria", lblAli: "Alimento", btnCalc: "CALCOLA MACRO", btnAdd: "AGGIUNGI AL PIATTO", btnEmpty: "SVUOTA TUTTO", altTitle: "ALTERNATIVA BILANCIATA:", weight: "Peso stimato", plate: "Il Tuo Piatto:", placeholder: "Grammi (g)" },
+            en: { discTitle: "IMPORTANT NOTICE", discText: "Data for info. Consult a professional!", btnClose: "I AGREE", navConv: "⚖️ Converter", navCal: "🔥 Calculator", navComp: "🥗 Meal Planner", cat1: "Main Courses", cat2: "Proteins", cat3: "Vegetables", cat4: "Fruits", cat5: "Condiments", raw: "RAW → COOKED", cooked: "COOKED → RAW", lblCat: "Category", lblAli: "Food", btnCalc: "CALCULATE", btnAdd: "ADD TO PLATE", btnEmpty: "CLEAR ALL", altTitle: "BALANCED OPTION:", weight: "Estimated weight", plate: "Your Plate:", placeholder: "Grams (g)" },
+            es: { discTitle: "AVISO IMPORTANTE", discText: "Datos informativos. ¡Consulte a un profesional!", btnClose: "ACEPTO", navConv: "⚖️ Convertidor", navCal: "🔥 Calculadora", navComp: "🥗 Crear Menú", cat1: "Primeros Platos", cat2: "Proteínas", cat3: "Verduras", cat4: "Frutas", cat5: "Condimentos", raw: "CRUDO → COCIDO", cooked: "COCIDO → CRUDO", lblCat: "Categoría", lblAli: "Alimento", btnCalc: "CALCULAR", btnAdd: "AÑADIR", btnEmpty: "BORRAR TODO", altTitle: "OPCIÓN EQUILIBRADA:", weight: "Peso estimado", plate: "Tu Plato:", placeholder: "Gramos (g)" },
+            pt: { discTitle: "AVISO", discText: "Dados informativos. Consulte um profissional!", btnClose: "ACEITO", navConv: "⚖️ Conversor", navCal: "🔥 Calculadora", navComp: "🥗 Criar Refeição", cat1: "Primeiros", cat2: "Proteínas", cat3: "Vegetais", cat4: "Frutas", cat5: "Temperos", raw: "CRU → COZIDO", cooked: "COZIDO → CRU", lblCat: "Categoria", lblAli: "Alimento", btnCalc: "CALCULAR", btnAdd: "ADICIONAR", btnEmpty: "LIMPAR", altTitle: "OPÇÃO EQUILIBRADA:", weight: "Peso estimado", plate: "Sua Refeição:", placeholder: "Gramas (g)" },
+            fr: { discTitle: "AVIS", discText: "Données informatives. Consultez un professionnel !", btnClose: "OK", navConv: "⚖️ Convertisseur", navCal: "🔥 Calculateur", navComp: "🥗 Créer Repas", cat1: "Plats Principaux", cat2: "Protéines", cat3: "Légumes", cat4: "Fruits", cat5: "Condiments", raw: "CRU → CUIT", cooked: "CUIT → CRU", lblCat: "Catégorie", lblAli: "Aliment", btnCalc: "CALCULER", btnAdd: "AJOUTER", btnEmpty: "VIDER", altTitle: "OPTION ÉQUILIBRÉE :", weight: "Poids estimé", plate: "Votre Repas :", placeholder: "Grammes (g)" },
+            de: { discTitle: "HINWEIS", discText: "Nur zur Information. Fachmann konsultieren!", btnClose: "OK", navConv: "⚖️ Konverter", navCal: "🔥 Rechner", navComp: "🥗 Mahlzeitplaner", cat1: "Hauptspeisen", cat2: "Proteine", cat3: "Gemüse", cat4: "Früchte", cat5: "Gewürze", raw: "ROH → GEKOCHT", cooked: "GEKOCHT → ROH", lblCat: "Kategorie", lblAli: "Lebensmittel", btnCalc: "BERECHNEN", btnAdd: "HINZUFÜGEN", btnEmpty: "LEEREN", altTitle: "BALANCIERTE OPTION:", weight: "Gewicht geschätzt", plate: "Ihre Mahlzeit:", placeholder: "Gramm (g)" }
         };
 
         const db = {
             primo: {
-                pasta: { it: "Pasta semola", en: "Pasta", kcal: 353, p: 13, c: 72, f: 1.5, ratio: 2.1 },
-                pasta_int: { it: "Pasta Integrale", en: "Whole Pasta", kcal: 348, p: 14, c: 65, f: 2.5, ratio: 2.0 },
-                riso_bas: { it: "Riso Basmati", en: "Basmati Rice", kcal: 345, p: 8.5, c: 78, f: 0.6, ratio: 2.5 },
-                riso_int: { it: "Riso Integrale", en: "Brown Rice", kcal: 337, p: 7.5, c: 74, f: 1.9, ratio: 2.4 },
-                patate: { it: "Patate", en: "Potatoes", kcal: 77, p: 2, c: 17, f: 0.1, ratio: 0.9 },
-                quinoa: { it: "Quinoa", en: "Quinoa", kcal: 368, p: 14, c: 64, f: 6, ratio: 2.4 },
-                farro: { it: "Farro", en: "Spelt", kcal: 335, p: 15, c: 67, f: 2.5, ratio: 2.3 },
-                orzo: { it: "Orzo", en: "Barley", kcal: 354, p: 12, c: 73, f: 2.3, ratio: 2.4 },
-                couscous: { it: "Couscous", en: "Couscous", kcal: 356, p: 12, c: 72, f: 0.6, ratio: 2.2 },
-                pane: { it: "Pane Comune", en: "White Bread", kcal: 265, p: 9, c: 49, f: 1.5, ratio: 1.0 },
-                pane_int: { it: "Pane Integrale", en: "Whole Bread", kcal: 243, p: 8, c: 44, f: 2.0, ratio: 1.0 },
-                avena: { it: "Avena", en: "Oats", kcal: 389, p: 16, c: 66, f: 7, ratio: 2.2 },
-                polenta: { it: "Polenta (Farina)", en: "Cornmeal", kcal: 345, p: 8, c: 75, f: 1.2, ratio: 3.5 },
-                gnocchi: { it: "Gnocchi di Patate", en: "Potato Gnocchi", kcal: 150, p: 3, c: 35, f: 0.5, ratio: 1.1 }
+                pasta: { it: "Pasta semola", kcal: 353, p: 13, c: 72, f: 1.5, ratio: { bollito: 2.1, padella: 2.0, forno: 1.8 } },
+                pasta_int: { it: "Pasta Integrale", kcal: 348, p: 14, c: 65, f: 2.5, ratio: { bollito: 2.0, padella: 1.9, forno: 1.7 } },
+                riso_bas: { it: "Riso Basmati", kcal: 345, p: 8.5, c: 78, f: 0.6, ratio: { bollito: 2.5, padella: 2.3, forno: 2.1 } },
+                riso_int: { it: "Riso Integrale", kcal: 337, p: 7.5, c: 74, f: 1.9, ratio: { bollito: 2.4, padella: 2.2, forno: 2.0 } },
+                patate: { it: "Patate", kcal: 77, p: 2, c: 17, f: 0.1, ratio: { bollito: 1.0, padella: 0.85, forno: 0.75 } },
+                quinoa: { it: "Quinoa", kcal: 368, p: 14, c: 64, f: 6, ratio: { bollito: 2.4, padella: 2.2, forno: 2.0 } },
+                farro: { it: "Farro", kcal: 335, p: 15, c: 67, f: 2.5, ratio: { bollito: 2.3, padella: 2.1, forno: 1.9 } },
+                orzo: { it: "Orzo", kcal: 354, p: 12, c: 73, f: 2.3, ratio: { bollito: 2.4, padella: 2.2, forno: 2.0 } },
+                couscous: { it: "Couscous", kcal: 356, p: 12, c: 72, f: 0.6, ratio: { bollito: 2.2, padella: 2.0, forno: 1.8 } },
+                pane: { it: "Pane Comune", kcal: 265, p: 9, c: 49, f: 1.5, ratio: 1.0 },
+                pane_int: { it: "Pane Integrale", kcal: 243, p: 8, c: 44, f: 2.0, ratio: 1.0 },
+                avena: { it: "Avena", kcal: 389, p: 16, c: 66, f: 7, ratio: { bollito: 2.2, padella: 2.0, forno: 1.8 } },
+                polenta: { it: "Polenta (Farina)", kcal: 345, p: 8, c: 75, f: 1.2, ratio: { bollito: 3.5, padella: 3.0, forno: 2.8 } },
+                gnocchi: { it: "Gnocchi di Patate", kcal: 150, p: 3, c: 35, f: 0.5, ratio: { bollito: 1.1, padella: 1.0, forno: 0.9 } }
             },
             secondo: {
-                pollo: { it: "Petto di Pollo", en: "Chicken Breast", kcal: 110, p: 23.5, c: 0, f: 1, ratio: 0.75 },
-                tacchino: { it: "Fesa Tacchino", en: "Turkey Breast", kcal: 107, p: 24, c: 0, f: 1.2, ratio: 0.75 },
-                manzo_magro: { it: "Manzo Magro", en: "Lean Beef", kcal: 121, p: 20.5, c: 0, f: 4.3, ratio: 0.7 },
-                maiale_lonza: { it: "Lonza Maiale", en: "Pork Loin", kcal: 145, p: 21, c: 0, f: 6.5, ratio: 0.75 },
-                merluzzo: { it: "Merluzzo", en: "Cod", kcal: 71, p: 17, c: 0, f: 0.3, ratio: 0.8 },
-                salmone: { it: "Salmone Fresco", en: "Salmon", kcal: 202, p: 20, c: 0, f: 13, ratio: 0.85 },
-                orata: { it: "Orata", en: "Sea Bream", kcal: 110, p: 20, c: 0, f: 3.5, ratio: 0.8 },
-                branzino: { it: "Branzino", en: "Sea Bass", kcal: 103, p: 20, c: 0, f: 2.5, ratio: 0.8 },
-                tonno_nat: { it: "Tonno Naturale", en: "Tuna (Water)", kcal: 103, p: 24, c: 0, f: 0.8, ratio: 1.0 },
-                tonno_olio: { it: "Tonno Olio (Sgocciolato)", en: "Tuna (Oil)", kcal: 190, p: 25, c: 0, f: 10, ratio: 1.0 },
-                uova: { it: "Uova Intere", en: "Eggs", kcal: 155, p: 13, c: 1, f: 11, ratio: 1.0 },
-                albume: { it: "Albume d'Uovo", en: "Egg White", kcal: 52, p: 11, c: 0.7, f: 0.2, ratio: 1.0 },
-                tofu: { it: "Tofu", en: "Tofu", kcal: 76, p: 8, c: 1.9, f: 4.8, ratio: 1.0 },
-                tempeh: { it: "Tempeh", en: "Tempeh", kcal: 190, p: 19, c: 9, f: 11, ratio: 1.0 },
-                seitan: { it: "Seitan", en: "Seitan", kcal: 120, p: 24, c: 4, f: 0.5, ratio: 1.0 },
-                bresaola: { it: "Bresaola", en: "Bresaola", kcal: 151, p: 33, c: 0.5, f: 2, ratio: 1.0 },
-                fesa_tacchino_aff: { it: "Fesa Tacchino Affett.", en: "Sliced Turkey", kcal: 100, p: 21, c: 1, f: 1.5, ratio: 1.0 },
-                fiocchi_latte: { it: "Fiocchi di Latte", en: "Cottage Cheese", kcal: 98, p: 12, c: 3, f: 4, ratio: 1.0 }
+                pollo: { it: "Petto di Pollo", kcal: 110, p: 23.5, c: 0, f: 1, ratio: { bollito: 0.85, padella: 0.75, forno: 0.65 } },
+                tacchino: { it: "Fesa Tacchino", kcal: 107, p: 24, c: 0, f: 1.2, ratio: { bollito: 0.85, padella: 0.75, forno: 0.65 } },
+                manzo_magro: { it: "Manzo Magro", kcal: 121, p: 20.5, c: 0, f: 4.3, ratio: { bollito: 0.80, padella: 0.70, forno: 0.60 } },
+                maiale_lonza: { it: "Lonza Maiale", kcal: 145, p: 21, c: 0, f: 6.5, ratio: { bollito: 0.80, padella: 0.75, forno: 0.65 } },
+                merluzzo: { it: "Merluzzo", kcal: 71, p: 17, c: 0, f: 0.3, ratio: { bollito: 0.90, padella: 0.80, forno: 0.70 } },
+                salmone: { it: "Salmone Fresco", kcal: 202, p: 20, c: 0, f: 13, ratio: { bollito: 0.90, padella: 0.85, forno: 0.75 } },
+                orata: { it: "Orata", kcal: 110, p: 20, c: 0, f: 3.5, ratio: { bollito: 0.85, padella: 0.80, forno: 0.70 } },
+                branzino: { it: "Branzino", kcal: 103, p: 20, c: 0, f: 2.5, ratio: { bollito: 0.85, padella: 0.80, forno: 0.70 } },
+                tonno_nat: { it: "Tonno Naturale", kcal: 103, p: 24, c: 0, f: 0.8, ratio: 1.0 },
+                tonno_olio: { it: "Tonno Olio", kcal: 190, p: 25, c: 0, f: 10, ratio: 1.0 },
+                uova: { it: "Uova Intere", kcal: 155, p: 13, c: 1, f: 11, ratio: 1.0 },
+                albume: { it: "Albume", kcal: 52, p: 11, c: 0.7, f: 0.2, ratio: 1.0 },
+                tofu: { it: "Tofu", kcal: 76, p: 8, c: 1.9, f: 4.8, ratio: 1.0 },
+                tempeh: { it: "Tempeh", kcal: 190, p: 19, c: 9, f: 11, ratio: 1.0 },
+                seitan: { it: "Seitan", kcal: 120, p: 24, c: 4, f: 0.5, ratio: 1.0 },
+                bresaola: { it: "Bresaola", kcal: 151, p: 33, c: 0.5, f: 2, ratio: 1.0 },
+                fesa_tacchino_aff: { it: "Fesa Tacchino Affett.", kcal: 100, p: 21, c: 1, f: 1.5, ratio: 1.0 },
+                fiocchi_latte: { it: "Fiocchi di Latte", kcal: 98, p: 12, c: 3, f: 4, ratio: 1.0 }
             },
             contorno: {
-                zucchine: { it: "Zucchine", en: "Zucchini", kcal: 17, p: 1.3, c: 3, f: 0.1, ratio: 0.9 },
-                broccoli: { it: "Broccoli", en: "Broccoli", kcal: 34, p: 3, c: 6, f: 0.4, ratio: 1.0 },
-                spinaci: { it: "Spinaci", en: "Spinach", kcal: 23, p: 2.9, c: 3.6, f: 0.4, ratio: 0.8 },
-                carote: { it: "Carote", en: "Carrots", kcal: 41, p: 0.9, c: 9.6, f: 0.2, ratio: 1.0 },
-                peperoni: { it: "Peperoni", en: "Peppers", kcal: 31, p: 1, c: 6, f: 0.3, ratio: 0.9 },
-                fagiolini: { it: "Fagiolini", en: "Green Beans", kcal: 31, p: 1.8, c: 7, f: 0.2, ratio: 1.0 },
-                cavolfiore: { it: "Cavolfiore", en: "Cauliflower", kcal: 25, p: 1.9, c: 5, f: 0.3, ratio: 1.0 },
-                melanzane: { it: "Melanzane", en: "Eggplant", kcal: 25, p: 1, c: 6, f: 0.2, ratio: 0.9 },
-                finocchi: { it: "Finocchi", en: "Fennel", kcal: 31, p: 1.2, c: 7, f: 0.2, ratio: 1.0 },
-                zucca: { it: "Zucca", en: "Pumpkin", kcal: 26, p: 1, c: 6.5, f: 0.1, ratio: 0.8 },
-                funghi: { it: "Funghi Champignon", en: "Mushrooms", kcal: 22, p: 3, c: 3, f: 0.3, ratio: 0.9 },
-                insalata: { it: "Insalata Verde", en: "Salad", kcal: 15, p: 1.3, c: 2.2, f: 0.2, ratio: 1.0 }
+                zucchine: { it: "Zucchine", kcal: 17, p: 1.3, c: 3, f: 0.1, ratio: { bollito: 0.95, padella: 0.90, forno: 0.80 } },
+                broccoli: { it: "Broccoli", kcal: 34, p: 3, c: 6, f: 0.4, ratio: { bollito: 1.0, padella: 0.90, forno: 0.85 } },
+                spinaci: { it: "Spinaci", kcal: 23, p: 2.9, c: 3.6, f: 0.4, ratio: { bollito: 0.85, padella: 0.80, forno: 0.75 } },
+                carote: { it: "Carote", kcal: 41, p: 0.9, c: 9.6, f: 0.2, ratio: { bollito: 1.0, padella: 0.95, forno: 0.85 } },
+                peperoni: { it: "Peperoni", kcal: 31, p: 1, c: 6, f: 0.3, ratio: { bollito: 0.95, padella: 0.90, forno: 0.80 } },
+                fagiolini: { it: "Fagiolini", kcal: 31, p: 1.8, c: 7, f: 0.2, ratio: { bollito: 1.0, padella: 0.95, forno: 0.90 } },
+                cavolfiore: { it: "Cavolfiore", kcal: 25, p: 1.9, c: 5, f: 0.3, ratio: { bollito: 1.0, padella: 0.90, forno: 0.85 } },
+                melanzane: { it: "Melanzane", kcal: 25, p: 1, c: 6, f: 0.2, ratio: { bollito: 0.95, padella: 0.90, forno: 0.80 } },
+                finocchi: { it: "Finocchi", kcal: 31, p: 1.2, c: 7, f: 0.2, ratio: { bollito: 1.0, padella: 0.95, forno: 0.85 } },
+                zucca: { it: "Zucca", kcal: 26, p: 1, c: 6.5, f: 0.1, ratio: { bollito: 0.90, padella: 0.85, forno: 0.75 } },
+                funghi: { it: "Funghi Champignon", kcal: 22, p: 3, c: 3, f: 0.3, ratio: { bollito: 0.95, padella: 0.90, forno: 0.80 } },
+                insalata: { it: "Insalata Verde", kcal: 15, p: 1.3, c: 2.2, f: 0.2, ratio: 1.0 }
             },
             frutta: {
-                mela: { it: "Mela", en: "Apple", kcal: 52, p: 0.3, c: 14, ratio: 1 },
-                banana: { it: "Banana", en: "Banana", kcal: 89, p: 1.1, c: 23, ratio: 1 },
-                pera: { it: "Pera", en: "Pear", kcal: 57, p: 0.4, c: 15, ratio: 1 },
-                arancia: { it: "Arancia", en: "Orange", kcal: 47, p: 0.9, c: 12, ratio: 1 },
-                fragole: { it: "Fragole", en: "Strawberries", kcal: 32, p: 0.7, c: 8, ratio: 1 },
-                kiwi: { it: "Kiwi", en: "Kiwi", kcal: 61, p: 1.1, c: 15, ratio: 1 },
-                ananas: { it: "Ananas", en: "Pineapple", kcal: 50, p: 0.5, c: 13, ratio: 1 },
-                mango: { it: "Mango", en: "Mango", kcal: 60, p: 0.8, c: 15, ratio: 1 },
-                uva: { it: "Uva", en: "Grapes", kcal: 67, p: 0.6, c: 17, ratio: 1 },
-                pesca: { it: "Pesca", en: "Peach", kcal: 39, p: 0.9, c: 10, ratio: 1 },
-                albicocca: { it: "Albicocca", en: "Apricot", kcal: 48, p: 1.4, c: 11, ratio: 1 },
-                ciliegie: { it: "Ciliegie", en: "Cherries", kcal: 50, p: 1, c: 12, ratio: 1 },
-                mirtilli: { it: "Mirtilli", en: "Blueberries", kcal: 57, p: 0.7, c: 14, ratio: 1 },
-                lamponi: { it: "Lamponi", en: "Raspberries", kcal: 52, p: 1.2, c: 12, ratio: 1 },
-                melone: { it: "Melone", en: "Melon", kcal: 34, p: 0.8, c: 8, ratio: 1 },
-                anguria: { it: "Anguria", en: "Watermelon", kcal: 30, p: 0.6, c: 8, ratio: 1 },
-                prugna: { it: "Prugna", en: "Plum", kcal: 46, p: 0.7, c: 11, ratio: 1 },
-                pompelmo: { it: "Pompelmo", en: "Grapefruit", kcal: 42, p: 0.8, c: 11, ratio: 1 },
-                fichi: { it: "Fichi Freschi", en: "Figs", kcal: 74, p: 0.8, c: 19, ratio: 1 },
-                mandarini: { it: "Mandarini", en: "Mandarins", kcal: 53, p: 0.8, c: 13, ratio: 1 }
+                mela: { it: "Mela", kcal: 52, p: 0.3, c: 14, ratio: 1 },
+                banana: { it: "Banana", kcal: 89, p: 1.1, c: 23, ratio: 1 },
+                pera: { it: "Pera", kcal: 57, p: 0.4, c: 15, ratio: 1 },
+                arancia: { it: "Arancia", kcal: 47, p: 0.9, c: 12, ratio: 1 },
+                fragole: { it: "Fragole", kcal: 32, p: 0.7, c: 8, ratio: 1 },
+                kiwi: { it: "Kiwi", kcal: 61, p: 1.1, c: 15, ratio: 1 },
+                ananas: { it: "Ananas", kcal: 50, p: 0.5, c: 13, ratio: 1 },
+                mango: { it: "Mango", kcal: 60, p: 0.8, c: 15, ratio: 1 },
+                uva: { it: "Uva", kcal: 67, p: 0.6, c: 17, ratio: 1 },
+                pesca: { it: "Pesca", kcal: 39, p: 0.9, c: 10, ratio: 1 }
+            },
+            condimenti: {
+                olio_evo: { it: "Olio Extra Vergine", kcal: 884, p: 0, c: 0, f: 100, ratio: 1 },
+                burro: { it: "Burro", kcal: 717, p: 0.8, c: 0.1, f: 81, ratio: 1 },
+                maionese: { it: "Maionese Classica", kcal: 680, p: 1, c: 1, f: 75, ratio: 1 },
+                burro_arachidi: { it: "Burro d'Arachidi", kcal: 588, p: 25, c: 13, f: 50, ratio: 1 },
+                pesto: { it: "Pesto alla Genovese", kcal: 520, p: 5, c: 7, f: 52, ratio: 1 },
+                aceto_balsamico: { it: "Aceto Balsamico", kcal: 88, p: 0.5, c: 17, f: 0, ratio: 1 },
+                ketchup: { it: "Ketchup", kcal: 112, p: 1.3, c: 25, f: 0.2, ratio: 1 }
             }
         };
-        // 5. MOTORE LOGICO (CALCOLI E NAVIGAZIONE)
+
         let currentLang = 'it'; let modoCrudo = true; let pasto = []; let lastMacros = {c:0, p:0};
 
         window.onload = () => {
@@ -238,7 +262,13 @@
             
             ['conv-cat', 'cal-cat', 'comp-cat'].forEach(id => {
                 const s = document.getElementById(id);
-                s.innerHTML = `<option value="primo">${t.cat1}</option><option value="secondo">${t.cat2}</option><option value="contorno">${t.cat3}</option>${id !== 'conv-cat' ? `<option value="frutta">${t.cat4}</option>` : ''}`;
+                s.innerHTML = `
+                    <option value="primo">${t.cat1}</option>
+                    <option value="secondo">${t.cat2}</option>
+                    <option value="contorno">${t.cat3}</option>
+                    <option value="frutta">${t.cat4}</option>
+                    <option value="condimenti">${t.cat5}</option>
+                `;
             });
             filtraAlimenti('conv'); filtraAlimenti('cal'); filtraAlimenti('comp');
         }
@@ -264,12 +294,19 @@
             const cat = document.getElementById('conv-cat').value;
             const key = document.getElementById('conv-alimento').value;
             const val = document.getElementById('conv-valore').value;
+            const tipoCottura = document.getElementById('conv-cottura').value;
             const res = document.getElementById('conv-res');
-            if(val > 0) {
+            
+            if(val > 0 && key) {
                 res.style.display = "block";
-                const ratio = db[cat][key].ratio;
-                res.innerHTML = `${uiTrans[currentLang].weight}: <strong>~${modoCrudo ? (val*ratio).toFixed(0) : (val/ratio).toFixed(0)}g</strong>`;
-            } else res.style.display = "none";
+                const ratiomappa = db[cat][key].ratio;
+                const ratioFinale = (typeof ratiomappa === 'object') ? ratiomappa[tipoCottura] : ratiomappa;
+                const calcolo = modoCrudo ? (val * ratioFinale) : (val / ratioFinale);
+                const t = uiTrans[currentLang];
+                res.innerHTML = `${t.weight}: <strong>~${calcolo.toFixed(0)}g</strong>`;
+            } else {
+                res.style.display = "none";
+            }
         }
 
         function calcolaMacroSingolo() {
@@ -314,12 +351,33 @@
         }
 
         function rinfrescaAlternativa() {
+            if (lastMacros.c <= 0 && lastMacros.p <= 0) return;
             const pk = Object.keys(db.primo); const sk = Object.keys(db.secondo);
             const rP = pk[Math.floor(Math.random()*pk.length)];
             const rS = sk[Math.floor(Math.random()*sk.length)];
-            const gP = (lastMacros.c / (db.primo[rP].c / 100)).toFixed(0);
-            const gS = (lastMacros.p / (db.secondo[rS].p / 100)).toFixed(0);
-            document.getElementById('testo-alternativa').innerHTML = `• ${gP}g <strong>${db.primo[rP][currentLang] || db.primo[rP].it}</strong><br>• ${gS}g <strong>${db.secondo[rS][currentLang] || db.secondo[rS].it}</strong>`;
+            let htmlAlt = "";
+
+            // Logica Carboidrati intelligente
+            let gP = (lastMacros.c / (db.primo[rP].c / 100));
+            if (rP === 'patate' && gP > 250) {
+                let mC = lastMacros.c / 2;
+                htmlAlt += `• ${(mC/(db.primo.patate.c/100)).toFixed(0)}g <strong>Patate</strong> + ${(mC/(db.primo.pane.c/100)).toFixed(0)}g <strong>Pane</strong><br>`;
+            } else if (rP === 'gnocchi' && gP > 350) {
+                let mC = lastMacros.c / 2;
+                htmlAlt += `• ${(mC/(db.primo.gnocchi.c/100)).toFixed(0)}g <strong>Gnocchi</strong> + ${(mC/(db.primo.pane.c/100)).toFixed(0)}g <strong>Pane</strong><br>`;
+            } else {
+                htmlAlt += `• ${gP.toFixed(0)}g <strong>${db.primo[rP][currentLang] || db.primo[rP].it}</strong><br>`;
+            }
+
+            // Logica Proteine intelligente
+            let gS = (lastMacros.p / (db.secondo[rS].p / 100));
+            if (rS === 'albume' && gS > 250) {
+                let mP = lastMacros.p / 2;
+                htmlAlt += `• ${(mP/(db.secondo.albume.p/100)).toFixed(0)}g <strong>Albume</strong> + ${(mP/(db.secondo.pollo.p/100)).toFixed(0)}g <strong>Pollo</strong>`;
+            } else {
+                htmlAlt += `• ${gS.toFixed(0)}g <strong>${db.secondo[rS][currentLang] || db.secondo[rS].it}</strong>`;
+            }
+            document.getElementById('testo-alternativa').innerHTML = htmlAlt;
         }
 
         function rimuoviItem(id) { pasto = pasto.filter(i => i.id !== id); aggiornaPiattoUI(); if(pasto.length===0) document.getElementById('piatto-area').style.display="none"; }
